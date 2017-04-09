@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset='utf-8' />
-    <title></title>
+    <title>01: Load Some Data</title>
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
     <script src="//d3js.org/d3.v3.min.js"></script>
 		<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.35.0/mapbox-gl.js'></script>
@@ -50,6 +50,9 @@ map.on('load', function() {
 		map.addSource('crashes', {
 			type: 'geojson',
 			'data': data,
+			// cluster: true,
+			// clusterRadius: 10,
+			// clusterMaxZoom: 12
 		});
 
 		// add the map layer
