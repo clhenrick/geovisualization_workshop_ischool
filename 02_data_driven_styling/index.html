@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title></title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src="//d3js.org/d3.v3.min.js"></script>
+		<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.35.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.35.0/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+<div id='map'></div>
+<script>
+
+// set our access token
+mapboxgl.accessToken = 'pk.eyJ1IjoiZW5qYWxvdCIsImEiOiIzOTJmMjBiZmI2NGQ2ZjAzODhiMzhiOGI2MTI1YTk4YSJ9.sIOXXU3TPp5dLg_L3cUxhQ';
+
+// create a new map using our div#map
+// set the style, zoom, and center
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/light-v9',
+    center: [-74.0059, 40.7127],
+    zoom: 10
+});
+
+// function to call once the map has loaded
+map.on('load', function() {
+	console.log('map loaded!');
+
+	// we'll use d3.json to load the point data asynchronously
+	d3.json('../data/nyc_crashes.geojson', function(error, data) {
+
+		// report an error if their was a problem getting the geojson data
+		if (error) throw error;
+
+		// filter out data with no geometry, otherwise MapboxGL throws an error and won't load data
+		data.features = data.features.filter(function(d) {
+			return d.geometry;
+		});
+
+		// add the source to the map styles
+		map.addSource('crashes', {
+			type: 'geojson',
+			'data': data,
+		});
+
+		// add the map layer
+		map.addLayer({
+			id: 'crashes',
+			type: 'circle',
+			source: 'crashes',
+			'layout': {},
+			'paint': {
+				'circle-color': {
+					property: 'crash_type',
+					type: 'categorical',
+					stops: [
+						['no_injury_fatality', '#FECC5C'],
+						['injury', '#FD8D3C'],
+						['fatality', '#F03B20'],
+						['injury_and_fatality', '#BD0026']
+					]
+				},
+				'circle-opacity': 0.8,
+				'circle-radius': {
+					'base': 1.75,
+					'stops': [[12, 2], [22, 180]]
+				},
+			}
+		});
+
+	}); // end d3.json
+
+}); // end map.on('load')
+
+</script>
+</body>
+</html>

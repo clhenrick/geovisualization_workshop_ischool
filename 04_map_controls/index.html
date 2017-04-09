@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title></title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src="//d3js.org/d3.v3.min.js"></script>
+		<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.35.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.35.0/mapbox-gl.css' rel='stylesheet' />
+		<!-- NEW: add turf.js  -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/2.0.2/turf.min.js"></script>
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+				.map-overlay {
+				    font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+				    position: absolute;
+				    width: auto;
+				    top: 0;
+				    left: 0;
+				    padding: 10px;
+						z-index: 10;
+				}
+
+				.map-overlay .map-overlay-inner {
+				    background-color: #fff;
+				    box-shadow:0 1px 2px rgba(0, 0, 0, 0.10);
+				    border-radius: 3px;
+				    padding: 10px;
+				    margin-bottom: 10px;
+				}
+
+				.map-overlay-inner h4 {
+					margin: 0;
+				}
+
+				.map-overlay-inner button {
+				    display: inline-block;
+				    width: auto;
+				    height: 20px;
+				    border: none;
+				    cursor: pointer;
+						background-image: none;
+						background-color: cadetblue;
+				}
+
+				.map-overlay-inner button.active {
+						background-color: lightgreen;
+				}
+
+				.map-overlay-inner button:focus {
+				    outline: none;
+				}
+
+				.map-overlay-inner button:hover {
+				    box-shadow:inset 0 0 0 3px rgba(0, 0, 0, 0.10);
+				}
+    </style>
+</head>
+<body>
+	<div class="map-overlay">
+		<div class="map-overlay-inner">
+			<h4>Map Layers</h4>
+			<button id="hexbins" value="crashesHexGrid" class="active">Hex Bins</button>
+			<button id="crashes" value="crashes">Crashes</button>
+		</div>
+	</div>
+<div id='map'></div>
+<script>
+
+// set our mapbox access token
+mapboxgl.accessToken = 'pk.eyJ1IjoiZW5qYWxvdCIsImEiOiIzOTJmMjBiZmI2NGQ2ZjAzODhiMzhiOGI2MTI1YTk4YSJ9.sIOXXU3TPp5dLg_L3cUxhQ';
+
+// create a new map; set the style, zoom, and center
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/light-v9',
+    center: [-74.0059, 40.7127],
+    zoom: 10
+});
+
+// function to call once the map has loaded
+map.on('load', function() {
+	console.log('map loaded!');
+
+	// we'll use d3.json to load the point data asynchronously
+	d3.json('../data/nyc_crashes.geojson', function(error, data) {
+
+		// report an error if their was a problem getting the geojson data
+		if (error) throw error;
+
+		// filter out data with no geometry, otherwise MapboxGL throws an error and won't load data
+		data.features = data.features.filter(function(d) {
+			return d.geometry;
+		});
+
+		// bounding box for our data's extent (I computed this ahead of time)
+		var bbox = [ -74.24939, 40.50394, -73.701195, 40.90995 ];
+		// our cell size, try changing this to a different value like 10
+		var cellSize = 1;
+		// units of our cells
+		var units = 'kilometers';
+
+		// create our hex grid
+		var hexGrid = turf.hexGrid(bbox, cellSize, units);
+
+		// count the number of crashes in each hex grid, this will take a few seconds.
+		// in an real life app we would want to display a loading GIF or message here
+		console.log('binning data, hold on tight...');
+		var hexCrashes = turf.count(hexGrid, data, 'totalCrashes');
+		console.log('done! ', hexCrashes);
+
+		// create a jenks natural breaks classification, see: https://en.wikipedia.org/wiki/Jenks_natural_breaks_optimization
+		// the number of breaks we are using
+		var numberBreaks = 5;
+
+		// NOTE: turf-jenks is technically depreciated, but it still works
+		var jenksBreaks = turf.jenks(hexCrashes, 'totalCrashes', numberBreaks);
+		console.log('our jenksBreaks array: ', jenksBreaks);
+
+		// via color brewer: http://colorbrewer2.org/#type=sequential&scheme=RdPu&n=5
+		var colors = ['#feebe2', '#fbb4b9', '#f768a1', '#c51b8a', '#7a0177'];
+
+		// create our color stops for the hexCrashes map layer style
+		var colorStops = jenksBreaks.map(function(b, i) {
+			if (i > 0) {
+				// here we map each color in the color array to it's corresponding bin
+				return [b, colors[i -1]];
+			} else {
+				// in the case of 0, hide the bin
+				return [b, 'rgba(255, 255, 255, 0)'];
+			}
+		});
+
+		// add our hex crashes layer data
+		map.addSource('crashesHexGrid', {
+			type: 'geojson',
+			data: hexCrashes
+		});
+
+		// add our hex crashes layer style
+		map.addLayer({
+			"id": "crashesHexGrid",
+			"type": "fill",
+			"source": "crashesHexGrid",
+			"layout": {},
+			"paint":{
+				'fill-color': {
+					property: 'totalCrashes',
+					stops: colorStops,
+				},
+				'fill-opacity': 0.6
+			}
+		});
+
+
+		// add the original crashes point data
+		map.addSource('crashes', {
+			type: 'geojson',
+			'data': data,
+		});
+
+		// add the crashes point layer
+		map.addLayer({
+			id: 'crashes',
+			type: 'circle',
+			source: 'crashes',
+			'layout': {},
+			'paint': {
+				'circle-color': {
+					property: 'crash_type',
+					type: 'categorical',
+					stops: [
+						['no_injury_fatality', '#FECC5C'],
+						['injury', '#FD8D3C'],
+						['fatality', '#F03B20'],
+						['injury_and_fatality', '#BD0026']
+					]
+				},
+				'circle-opacity': 0.8,
+				'circle-radius': {
+					'base': 1.75,
+					'stops': [[12, 2], [22, 180]]
+				},
+			}
+		}, 'crashesHexGrid');
+
+		// disable our crashes layer & set our hexbin layer to visible (necessary for button interactions)
+		map.setLayoutProperty('crashes', 'visibility', 'none');
+		map.setLayoutProperty('crashesHexGrid', 'visibility', 'visible');
+
+		var buttonIds = ['hexbins', 'crashes'];
+
+		for (var i = 0, l = buttonIds.length; i < l; i++) {
+			var el = document.getElementById(buttonIds[i]);
+
+			el.onclick = function(e) {
+				e.preventDefault();
+				e.stopPropagation();
+
+				var visibility = map.getLayoutProperty(this.value, 'visibility');
+
+				if (visibility === 'visible') {
+					map.setLayoutProperty(this.value, 'visibility', 'none');
+					this.className = '';
+				} else {
+					this.className = 'active';
+					map.setLayoutProperty(this.value, 'visibility', 'visible');
+				}
+			}
+		}
+
+	}); // end d3.json
+
+}); // end map.on('load')
+
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "name": "ischool_infoviz_workshop",
+  "version": "1.0.0",
+  "description": "code for geovisualization workshop at the ischool, uc berkeley",
+  "main": "''",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clhenrick/geovisualization_workshop_ischool.git"
+  },
+  "keywords": [
+    "geo-visualization",
+    "data-viz",
+    "workshop"
+  ],
+  "author": "Chris Henrick <chrishenrick@gmail.com> (http://chrishenrick.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/clhenrick/geovisualization_workshop_ischool/issues"
+  },
+  "homepage": "https://github.com/clhenrick/geovisualization_workshop_ischool#readme",
+  "dependencies": {
+    "@turf/bbox": "^4.0.2",
+    "@turf/hex-grid": "^4.0.2",
+    "turf-jenks": "^1.0.1"
+  }
+}
