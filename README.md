@@ -3,13 +3,15 @@
 
 This repository contains the code for the workshop given at UC Berkeley's iSchool on 2017-04-10. It covers creating an interactive web map using [MapboxGL](https://www.mapbox.com/mapbox-gl-js/api/), [GeoJSON](http://geojson.org/), and [Turf](http://turfjs.org/).
 
+[Link to the workshop slides](https://docs.google.com/presentation/d/1zJrk_NaD8NuH7_OP75ke27lAX9I0drC2Cd2RTHUEufE/edit?usp=sharing)
+
 ## TOC
 
-- [00 HTML Template](./00_template/index.html)
-- [01 Create the Map and Load Some Data](./01_load_some_data/index.html)
-- [02 Add Data Driven Styling to Our Layer](./02_data_driven_styling/index.html)
-- [03 Add Hex Bins and a Jenks classification](./03_hex_bins/index.html)
-- [04 Add Custom Map Controls](./04_map_controls/index.html)
+- [00 HTML Template](./00_template/)
+- [01 Create the Map and Load Some Data](./01_load_some_data/)
+- [02 Add Data Driven Styling to Our Layer](./02_data_driven_styling/)
+- [03 Add Hex Bins and a Jenks classification](./03_hex_bins/)
+- [04 Add Custom Map Controls](./04_map_controls/)
 
 We'll start by creating an interactive map using MapboxGL.JS and discussing adding a custom layer using some [GeoJSON data](./data/nyc_crashes.geojson) of vehicle collisions in New York City.
 
